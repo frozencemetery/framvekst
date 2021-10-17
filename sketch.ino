@@ -6,6 +6,12 @@
 #include <Adafruit_AM2315.h>
 #include <OneWire.h>
 
+/* Careful with these.  There needs to be defined band for the system to coast
+ * between.  While this is all floating point, sensor precision is a concern:
+ * the DS18B20 claims ±0.5C, the SHT30 ±0.2C, and the AM2315 ±0.1C. */
+#define TEMP_HIGH_C 43.33 /* ~110°F */
+#define TEMP_LOW_C 40.56 /* ~105°F */
+
 /* This could be bigger, but it's the IDE default, and doing anything at all
  * in the IDE is unpleasant, so... eh. */
 #define BAUD 9600
@@ -14,8 +20,8 @@
 typedef enum {
     /* Pins 0 and 1 mirror serial with USB. */
     ONEWIRE_PIN = 2,
-    RELAY_ONE,
-    RELAY_TWO,
+    TEMP_RELAY,
+    HUMID_RELAY,
 } pin;
 
 /* If you're choosing between the AM2315 and the SHT30, my preference was for
@@ -40,8 +46,8 @@ OneWire onewire(ONEWIRE_PIN);
 bool ds18b20_found = false;
 
 /* Sainsmart multi-channel relay board. */
-bool relay1_off = false;
-bool relay2_off = false;
+bool temp_relay_off = false;
+bool humid_relay_off = false;
 
 /* Assumes temp sensor is already selected and ready.  I don't really see
  * much purpose in the checksuming, so I don't bother. */
@@ -85,10 +91,10 @@ static inline void relay_on(pin pin, bool *relay_off) {
 
 void setup(void) {
     /* Relays start in ~unknown state - turn them off. */
-    pinMode(RELAY_ONE, OUTPUT);
-    relay_off(RELAY_ONE, &relay1_off);
-    pinMode(RELAY_TWO, OUTPUT);
-    relay_off(RELAY_TWO, &relay2_off);
+    pinMode(TEMP_RELAY, OUTPUT);
+    relay_off(TEMP_RELAY, &temp_relay_off);
+    pinMode(HUMID_RELAY, OUTPUT);
+    relay_off(HUMID_RELAY, &humid_relay_off);
 
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -122,51 +128,60 @@ void setup(void) {
         sht30_found = true;
         Serial.println("Found SHT30.");
     }
+
+    if (!sht30_found && !am2315_found) {
+        Serial.println("No humidistats found - disabling humidity control");
+
+        if (!ds18b20_found) {
+            Serial.println("No themostats either?  Life is meaningless");
+            while (1) {
+                delay(1000);
+            }
+        }
+    }
+}
+
+/* Get the best possible readings out of the system, but don't be too picky. */
+inline void take_readings(float *t_out, float *h_out, float *t_probe_out) {
+    *t_out = *h_out = *t_probe_out = NAN;
+
+    if (sht30_found) {
+        *t_out = sht30.readTemperature();
+        *h_out = sht30.readHumidity();
+    }
+    if ((!sht30_found && am2315_found) || *t_out == NAN || *h_out == NAN) {
+        if (!am2315.readTemperatureAndHumidity(t_out, h_out)) {
+            /* Set them to known-failed values, and allow for the ds18b20. */
+            *t_out = *h_out = NAN;
+        }
+    }
+
+    if (ds18b20_found) {
+        *t_probe_out = ds18b20_get_temp();
+        if (*t_out == NAN) {
+            *t_out = *t_probe_out;
+        }
+    }
 }
 
 void loop(void) {
-    float t, h;
+    float t, h, t_probe;
 
     /* I'm alive! */
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(2000);
     digitalWrite(LED_BUILTIN, LOW);
     delay(500);
 
-    if (ds18b20_found) {
-        t = ds18b20_get_temp();
-        Serial.print("DS18B20 says: T: ");
-        Serial.print(t);
-        Serial.println("°C");
-    }
-
-    if (am2315_found) {
-        if (!am2315.readTemperatureAndHumidity(&t, &h)) {
-            Serial.print("AM2315 read failure?");
-        } else {
-            Serial.print("AM2315 says: ");
-            Serial.print("T: ");
-            Serial.print(t);
-            Serial.print("°C, H: ");
-            Serial.print(h);
-            Serial.println("%");
+    take_readings(&t, &h, &t_probe);
+    if (t != NAN) {
+        if (t < TEMP_LOW_C && temp_relay_off) {
+            relay_on(TEMP_RELAY, &temp_relay_off);
+        } else if (t > TEMP_HIGH_C && !temp_relay_off) {
+            relay_off(TEMP_RELAY, &temp_relay_off);
         }
     }
 
-    if (sht30_found) {
-        t = sht30.readTemperature();
-        h = sht30.readHumidity();
-        if (t == NAN || h == NAN) {
-            Serial.print("SHT30 read failure?");
-        } else {
-            Serial.print("SHT30 says: ");
-            Serial.print("T: ");
-            Serial.print(t);
-            Serial.print("°C, H: ");
-            Serial.print(h);
-            Serial.println("%");
-        }
-    }
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(2000); /* Need >2s between loop iterations for sensors. */
 }
 
 /* Local variables: */
