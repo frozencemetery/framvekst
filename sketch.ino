@@ -10,9 +10,6 @@
  * in the IDE is unpleasant, so... eh. */
 #define BAUD 9600
 
-#define DS18B20_MEASURE 0x44
-#define DS18B20_READ 0xBE
-
 /* Customize your wiring here if needed. */
 typedef enum {
     /* Pins 0 and 1 mirror serial with USB. */
@@ -36,6 +33,8 @@ bool sht30_found = false;
 
 /* Why bother with this one if it doesn't have humidity?  Well, it has a
  * food-safe probe. */
+#define DS18B20_MEASURE 0x44
+#define DS18B20_READ 0xBE
 uint8_t ds18b20_addr[8];
 OneWire onewire(ONEWIRE_PIN);
 bool ds18b20_found = false;
