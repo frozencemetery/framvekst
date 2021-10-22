@@ -149,7 +149,7 @@ inline void take_readings(float *t_out, float *h_out, float *t_probe_out) {
         *t_out = sht30.readTemperature();
         *h_out = sht30.readHumidity();
     }
-    if (am2315_found && (!sht30_found || *t_out == NAN || *h_out == NAN)) {
+    if (am2315_found && (isnan(*t_out) || isnan(*h_out))) {
         if (!am2315.readTemperatureAndHumidity(t_out, h_out)) {
             /* Set them to known-failed values, and allow for the ds18b20. */
             *t_out = *h_out = NAN;
@@ -158,7 +158,7 @@ inline void take_readings(float *t_out, float *h_out, float *t_probe_out) {
 
     if (ds18b20_found) {
         *t_probe_out = ds18b20_get_temp();
-        if (*t_out == NAN) {
+        if (isnan(*t_out)) {
             *t_out = *t_probe_out;
         }
     }
@@ -172,7 +172,7 @@ void loop(void) {
     delay(500);
 
     take_readings(&t, &h, &t_probe);
-    if (t != NAN) {
+    if (!isnan(t)) {
         if (t < TEMP_LOW_C && temp_relay_off) {
             relay_on(TEMP_RELAY, &temp_relay_off);
         } else if (t > TEMP_HIGH_C && !temp_relay_off) {
