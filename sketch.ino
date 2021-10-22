@@ -149,7 +149,7 @@ inline void take_readings(float *t_out, float *h_out, float *t_probe_out) {
         *t_out = sht30.readTemperature();
         *h_out = sht30.readHumidity();
     }
-    if ((!sht30_found && am2315_found) || *t_out == NAN || *h_out == NAN) {
+    if (am2315_found && (!sht30_found || *t_out == NAN || *h_out == NAN)) {
         if (!am2315.readTemperatureAndHumidity(t_out, h_out)) {
             /* Set them to known-failed values, and allow for the ds18b20. */
             *t_out = *h_out = NAN;
