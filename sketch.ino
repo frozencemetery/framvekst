@@ -19,7 +19,10 @@
 /* Customize your wiring here if needed. */
 typedef enum {
     /* Pins 0 and 1 mirror serial with USB. */
-    ONEWIRE_PIN = 2,
+    SERIAL_0 = 0,
+    SERIAL_1 = 1,
+
+    ONEWIRE_PIN,
     TEMP_RELAY,
     HUMID_RELAY,
 } pin;
@@ -142,7 +145,7 @@ void setup(void) {
 }
 
 /* Get the best possible readings out of the system, but don't be too picky. */
-inline void take_readings(float *t_out, float *h_out, float *t_probe_out) {
+static inline void take_readings(float *t_out, float *h_out, float *t_probe_out) {
     *t_out = *h_out = *t_probe_out = NAN;
 
     if (sht30_found) {
