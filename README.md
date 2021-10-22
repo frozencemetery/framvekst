@@ -4,6 +4,12 @@ Backing code for the fermentation chamber I'm building.  Work in progress;
 more detailed documentation and setup explanation to follow at some point.
 Probably.
 
+Right now the system is set up to auto-detect sensors (DS18B20, SHT30, and/or
+AM2315).  I'm dissatisfied with the AM2315 and may remove that code if it gets
+in the way.  It's configured in "nut milk yogurt" configuration - humidity
+falls where it will, while temperature is kept in a specific range.  The
+humidity stuff is all wired up, just not doing anything.
+
 ## Setup
 
 This is an Arduino project.  The Arduino IDE has never worked well for me, so
