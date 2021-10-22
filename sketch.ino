@@ -9,8 +9,8 @@
 /* Careful with these.  There needs to be defined band for the system to coast
  * between.  While this is all floating point, sensor precision is a concern:
  * the DS18B20 claims ±0.5C, the SHT30 ±0.2C, and the AM2315 ±0.1C. */
-#define TEMP_HIGH_C 43.33 /* ~110°F */
-#define TEMP_LOW_C 40.56 /* ~105°F */
+#define TEMP_HIGH_C 44.44 /* ~112°F */
+#define TEMP_LOW_C 42.22 /* ~108°F */
 
 /* This could be bigger, but it's the IDE default, and doing anything at all
  * in the IDE is unpleasant, so... eh. */
