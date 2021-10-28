@@ -170,7 +170,6 @@ static inline void take_readings(float *t_out, float *h_out, float *t_probe_out)
 void loop(void) {
     float t, h, t_probe;
 
-    /* I'm alive! */
     digitalWrite(LED_BUILTIN, LOW);
     delay(500);
 
@@ -181,9 +180,10 @@ void loop(void) {
         } else if (t > TEMP_HIGH_C && !temp_relay_off) {
             relay_off(TEMP_RELAY, &temp_relay_off);
         }
+    } else {
+        digitalWrite(LED_BUILTIN, HIGH);
     }
 
-    digitalWrite(LED_BUILTIN, HIGH);
     delay(2000); /* Need >2s between loop iterations for sensors. */
 }
 
