@@ -9,8 +9,16 @@
 /* Careful with these.  There needs to be defined band for the system to coast
  * between.  While this is all floating point, sensor precision is a concern:
  * the DS18B20 claims ±0.5C, the SHT30 ±0.2C, and the AM2315 ±0.1C. */
+
+#if 0
+/* vegan yogurt mode */
 #define TEMP_HIGH_C 43.33 /* ~110°F */
 #define TEMP_LOW_C 41.67 /* ~107°F */
+#elif 1
+/* bread mode */
+#define TEMP_HIGH_C 23.89 /* 75°F */
+#define TEMP_LOW_C 22.22 /* 72°F */
+#endif
 
 /* This could be bigger, but it's the IDE default, and doing anything at all
  * in the IDE is unpleasant, so... eh. */
