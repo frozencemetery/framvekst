@@ -6,20 +6,6 @@
 #include <Adafruit_AM2315.h>
 #include <OneWire.h>
 
-/* Careful with these.  There needs to be defined band for the system to coast
- * between.  While this is all floating point, sensor precision is a concern:
- * the DS18B20 claims ±0.5C, the SHT30 ±0.2C, and the AM2315 ±0.1C. */
-
-#if 0
-/* vegan yogurt mode */
-#define TEMP_HIGH_C 43.33 /* ~110°F */
-#define TEMP_LOW_C 41.67 /* ~107°F */
-#elif 1
-/* bread mode */
-#define TEMP_HIGH_C 23.89 /* 75°F */
-#define TEMP_LOW_C 22.22 /* 72°F */
-#endif
-
 /* This could be bigger, but it's the IDE default, and doing anything at all
  * in the IDE is unpleasant, so... eh. */
 #define BAUD 9600
@@ -33,7 +19,28 @@ typedef enum {
     ONEWIRE_PIN,
     TEMP_RELAY,
     HUMID_RELAY,
+    MODE_BUTTON,
 } pin;
+
+/* Careful with these.  There needs to be defined band for the system to coast
+ * between.  While this is all floating point, sensor precision is a concern:
+ * the DS18B20 claims ±0.5C, the SHT30 ±0.2C, and the AM2315 ±0.1C. */
+struct {
+    float low;
+    float high;
+} modes[] = {
+    { /* sourdough bread */
+        .low = 22.22, /* ~72°F */
+        .high = 23.89, /* ~75°F */
+    },
+    { /* vegan yogurt */
+        .low = 41.67, /* ~107°F */
+        .high = 43.33, /* ~110°F */
+    },
+};
+uint8_t mode = 0; /* incremented by button push */
+float low;
+float high;
 
 /* If you're choosing between the AM2315 and the SHT30, my preference was for
  * the SHT30, since the AM2315's humidity readings were consistently 10%
@@ -107,6 +114,8 @@ void setup(void) {
     pinMode(HUMID_RELAY, OUTPUT);
     relay_off(HUMID_RELAY, &humid_relay_off);
 
+    pinMode(MODE_BUTTON, INPUT_PULLUP);
+
     pinMode(LED_BUILTIN, OUTPUT);
 
     Serial.begin(BAUD);
@@ -150,6 +159,9 @@ void setup(void) {
             }
         }
     }
+
+    low = modes[mode].low;
+    high = modes[mode].high;
 }
 
 /* Get the best possible readings out of the system, but don't be too picky. */
@@ -185,8 +197,34 @@ static inline void log_readings(float t, float h, float t_probe) {
     Serial.println("%RH");
 }
 
+static inline void flash(void) {
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+}
+
 void loop(void) {
     float t, h, t_probe;
+
+    if (digitalRead(MODE_BUTTON) == LOW) {
+        flash();
+        flash();
+        mode++;
+        if (mode >= sizeof(modes) / sizeof(*modes)) {
+            mode = 0;
+        }
+        Serial.print("mode: ");
+        Serial.println(mode);
+        low = modes[mode].low;
+        high = modes[mode].high;
+        delay(500);
+        for (unsigned char i = 0; i < mode; i++) {
+            flash();
+        }
+        return; /* continue */
+    }
 
     digitalWrite(LED_BUILTIN, LOW);
     delay(500);
@@ -194,9 +232,9 @@ void loop(void) {
     take_readings(&t, &h, &t_probe);
     log_readings(t, h, t_probe);
     if (!isnan(t)) {
-        if (t < TEMP_LOW_C && temp_relay_off) {
+        if (t < low && temp_relay_off) {
             relay_on(TEMP_RELAY, &temp_relay_off);
-        } else if (t > TEMP_HIGH_C && !temp_relay_off) {
+        } else if (t > high && !temp_relay_off) {
             relay_off(TEMP_RELAY, &temp_relay_off);
         }
     } else {
