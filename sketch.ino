@@ -28,19 +28,29 @@ typedef enum {
 struct {
     float low;
     float high;
+    bool debug;
 } modes[] = {
+    /* Be verbose - Arduino toolchain lacks full designated initializers. */
+    { /* start in debug */
+        .low = NAN,
+        .high = NAN,
+        .debug = true,
+    },
     { /* sourdough bread */
         .low = 22.22, /* ~72°F */
         .high = 23.89, /* ~75°F */
+        .debug = false,
     },
     { /* vegan yogurt */
         .low = 41.67, /* ~107°F */
         .high = 43.33, /* ~110°F */
+        .debug = false,
     },
 };
 uint8_t mode = 0; /* incremented by button push */
 float low;
 float high;
+bool debug;
 
 /* If you're choosing between the AM2315 and the SHT30, my preference was for
  * the SHT30, since the AM2315's humidity readings were consistently 10%
@@ -162,6 +172,7 @@ void setup(void) {
 
     low = modes[mode].low;
     high = modes[mode].high;
+    debug = modes[mode].debug;
 }
 
 /* Get the best possible readings out of the system, but don't be too picky. */
@@ -188,6 +199,10 @@ static inline void take_readings(float *t_out, float *h_out, float *t_probe_out)
 }
 
 static inline void log_readings(float t, float h, float t_probe) {
+    if (!debug) {
+        return;
+    }
+
     Serial.print("Read: ");
     Serial.print(t);
     Serial.print("°C (probe ");
@@ -219,6 +234,7 @@ void loop(void) {
         Serial.println(mode);
         low = modes[mode].low;
         high = modes[mode].high;
+        debug = modes[mode].debug;
         delay(500);
         for (unsigned char i = 0; i < mode; i++) {
             flash();
