@@ -175,6 +175,16 @@ static inline void take_readings(float *t_out, float *h_out, float *t_probe_out)
     }
 }
 
+static inline void log_readings(float t, float h, float t_probe) {
+    Serial.print("Read: ");
+    Serial.print(t);
+    Serial.print("°C (probe ");
+    Serial.print(t_probe);
+    Serial.print("°C), ");
+    Serial.print(h);
+    Serial.println("%RH");
+}
+
 void loop(void) {
     float t, h, t_probe;
 
@@ -182,6 +192,7 @@ void loop(void) {
     delay(500);
 
     take_readings(&t, &h, &t_probe);
+    log_readings(t, h, t_probe);
     if (!isnan(t)) {
         if (t < TEMP_LOW_C && temp_relay_off) {
             relay_on(TEMP_RELAY, &temp_relay_off);
