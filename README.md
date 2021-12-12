@@ -6,9 +6,13 @@ Probably.
 
 Right now the system is set up to auto-detect sensors (DS18B20, SHT30, and/or
 AM2315).  I'm dissatisfied with the AM2315 and may remove that code if it gets
-in the way.  It's configured in "nut milk yogurt" configuration - humidity
-falls where it will, while temperature is kept in a specific range.  The
-humidity stuff is all wired up, just not doing anything.
+in the way.  It also likes having a button.
+
+The system starts up in "debug" configuration - logging sensors to serial and
+not controlling temperature/humidity.  The button can be pressed to go to the
+next mode (wait for double flash, then it will flash the current value of
+mode).  Modes wrap around, and the system begins in debug.  See beginning of
+source for more information.
 
 ## Setup
 
