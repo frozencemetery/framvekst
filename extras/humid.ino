@@ -72,11 +72,11 @@ void loop(void) {
     if (humidity < 48 && !relay_on) {
         digitalWrite(RELAY, HIGH);
         relay_on = true;
-        sdelay(60);
+        sdelay(300);
     } else if (humidity > 53 && relay_on) {
         digitalWrite(RELAY, LOW);
         relay_on = false;
-        sdelay(120);
+        sdelay(300);
     }
 
     delay(2000); /* Allow time between sensor readings. */
