@@ -3,13 +3,23 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include <Adafruit_SHT31.h>
+#include <LiquidCrystal.h>
 
 #define BAUD 9600
 
 typedef enum {
-    SERIAL_0 = 0,
-    SERIAL_1 = 1,
-    
+    SERIAL_TX = 0,
+    SERIAL_RX = 1,
+
+    /* RED = 3, */
+    /* GREEN = 5, */
+    /* BLUE = 6, */
+    RS = 7,
+    EN = 8,
+    DB4 = 9,
+    DB5 = 10,
+    DB6 = 11,
+    DB7 = 12,
     /* LED_BUILTIN = 13, */
 
     SDA_PIN = 18,
@@ -18,6 +28,7 @@ typedef enum {
     RELAY = 21,
 } pin;
 
+LiquidCrystal lcd(RS, EN, DB4, DB5, DB6, DB7);
 Adafruit_SHT31 sht30;
 bool relay_on;
 
@@ -36,20 +47,29 @@ inline void sdelay(int seconds) {
     delay(seconds * 1000);
 }
 
+inline float fofc(float celsius) {
+    return (9 * celsius) / 5 + 32;
+}
+
 void setup(void) {
+    Serial.begin(BAUD);
+    while (!Serial) {
+        delay(100);
+    }
+
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(RELAY, OUTPUT);
 
+    /* pinMode(RED, OUTPUT); */
+    /* pinMode(GREEN, OUTPUT); */
+    /* pinMode(BLUE, OUTPUT); */
+
+    lcd.begin(16, 2);
+    lcd.print("\"loading\"...");
+
     blink();
 
-    /* Serial.begin(BAUD); */
-    /* while (!Serial) { */
-    /*     delay(100); */
-    /* } */
-    /* Serial.println("Console connected"); */
-
     if (!sht30.begin()) {
-        Serial.println("Couldn't find SHT30!");
         while (1) {
             blink();
             delay(2000);
@@ -58,28 +78,46 @@ void setup(void) {
 }
 
 void loop(void) {
-    float humidity;
+    float humidity, temperature;
+    int delay_secs = 2;
 
     humidity = sht30.readHumidity();
-    if (isnan(humidity)) {
+    temperature = sht30.readTemperature();
+    if (isnan(humidity) || isnan(temperature)) {
+        lcd.clear();
+        lcd.print("SHT30 bad read!");
         blink();
+        sdelay(2);
+        return;
     }
 
-    /* Serial.print("Read: "); */
-    /* Serial.print(humidity); */
-    /* Serial.println("%RH"); */
+    lcd.clear();
+    lcd.print(humidity);
+    lcd.print("%RH ");
 
-    if (humidity < 48 && !relay_on) {
+    if (humidity < 49 && !relay_on) {
         digitalWrite(RELAY, HIGH);
         relay_on = true;
-        sdelay(300);
+        delay_secs += 300;
+        lcd.print("*on*");
     } else if (humidity > 53 && relay_on) {
         digitalWrite(RELAY, LOW);
         relay_on = false;
-        sdelay(300);
+        delay_secs += 300;
+        lcd.print("*off*");
+    } else if (relay_on) {
+        lcd.print("on");
+    } else {
+        lcd.print("off");
     }
 
-    delay(2000); /* Allow time between sensor readings. */
+    lcd.setCursor(0, 1);
+    lcd.print(temperature);
+    lcd.print("C (");
+    lcd.print(fofc(temperature));
+    lcd.print("F)");
+
+    sdelay(delay_secs);
 }
 
 /* Local variables: */
