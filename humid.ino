@@ -65,7 +65,7 @@ void setup(void) {
     /* pinMode(BLUE, OUTPUT); */
 
     lcd.begin(16, 2);
-    lcd.print("\"loading\"...");
+    lcd.print("\"potatoes\"...");
 
     blink();
 
@@ -79,7 +79,7 @@ void setup(void) {
 
 void loop(void) {
     float humidity, temperature;
-    int delay_secs = 2;
+    int delay_secs = 5;
 
     humidity = sht30.readHumidity();
     temperature = sht30.readTemperature();
@@ -87,7 +87,7 @@ void loop(void) {
         lcd.clear();
         lcd.print("SHT30 bad read!");
         blink();
-        sdelay(2);
+        sdelay(5);
         return;
     }
 
@@ -95,12 +95,12 @@ void loop(void) {
     lcd.print(humidity);
     lcd.print("%RH ");
 
-    if (humidity < 49 && !relay_on) {
+    if (humidity < 40 && !relay_on) {
         digitalWrite(RELAY, HIGH);
         relay_on = true;
         delay_secs += 300;
         lcd.print("*on*");
-    } else if (humidity > 53 && relay_on) {
+    } else if (humidity > 45 && relay_on) {
         digitalWrite(RELAY, LOW);
         relay_on = false;
         delay_secs += 300;
