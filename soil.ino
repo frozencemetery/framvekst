@@ -6,6 +6,7 @@
 #include <LiquidCrystal.h>
 
 #define BAUD 9600
+#define DELAY_SECS 5
 
 typedef enum {
     SERIAL_TX = 0,
@@ -21,17 +22,16 @@ typedef enum {
     DB6 = 11,
     DB7 = 12,
     /* LED_BUILTIN = 13, */
+    RED_VCC = 14,
+    RED_SIG = 15,
 
     SDA_PIN = 18,
     SCL_PIN = 19,
 
-    /* RELAY = 21, */
 } pin;
 
 Adafruit_seesaw soil;
 LiquidCrystal lcd(RS, EN, DB4, DB5, DB6, DB7);
-
-bool relay_on;
 
 inline void blink(void) {
     digitalWrite(LED_BUILTIN, HIGH);
@@ -59,11 +59,9 @@ void setup(void) {
     }
 
     pinMode(LED_BUILTIN, OUTPUT);
-    /* pinMode(RELAY, OUTPUT); */
 
-    /* pinMode(RED, OUTPUT); */
-    /* pinMode(GREEN, OUTPUT); */
-    /* pinMode(BLUE, OUTPUT); */
+    pinMode(RED_VCC, OUTPUT);
+    digitalWrite(RED_VCC, LOW);
 
     lcd.begin(16, 2);
     lcd.print("DO YOU LIKE");
@@ -83,24 +81,34 @@ void setup(void) {
 }
 
 void loop(void) {
-    int delay_secs = 5;
     float temp_celsius;
-    uint16_t capacitance;
+    uint16_t g_cap;
+    int r_cap;
 
     lcd.clear();
 
     temp_celsius = soil.getTemp();
-    capacitance = soil.touchRead(0);
+    g_cap = soil.touchRead(0);
 
-    lcd.print("Current: ");
-    lcd.print(capacitance);
+    /* Powering this on and off saves on corrosion. */
+    digitalWrite(RED_VCC, HIGH);
+    delay(10); /* Example code uses 10ms for stabilization. */
+    r_cap = analogRead(RED_SIG);
+    digitalWrite(RED_VCC, LOW);
+
+    lcd.print("G: ");
+    lcd.print(g_cap);
+    lcd.print(", ");
+    lcd.print(fofc(temp_celsius));
+    lcd.print("F");
+    /* lcd.print(temp_celsius); */
+    /* lcd.print("C"); */
+    /* lcd.print("C (+/-2)"); */
 
     lcd.setCursor(0, 1);
-    /* lcd.print("Temp: "); */
-    lcd.print(temp_celsius);
-    lcd.print("C (+/-2)");
-    
-    sdelay(delay_secs);
+    lcd.print("R: ");
+    lcd.print(r_cap);
+    sdelay(DELAY_SECS);
 }
 
 /* Local variables: */
