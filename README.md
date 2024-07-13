@@ -18,3 +18,7 @@ source for more information.
 
 Humidistat backed by a different arduino.  There's a fair amount of overlap in
 the control logic between the two.
+
+# soil
+
+Soil moisture experimentation.
