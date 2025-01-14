@@ -11,6 +11,7 @@ typedef enum {
     SERIAL_TX = 0,
     SERIAL_RX = 1,
 
+    RELAY = 2,
     /* RED = 3, */
     /* GREEN = 5, */
     /* BLUE = 6, */
@@ -24,8 +25,6 @@ typedef enum {
 
     SDA_PIN = 18,
     SCL_PIN = 19,
-
-    RELAY = 21,
 } pin;
 
 LiquidCrystal lcd(RS, EN, DB4, DB5, DB6, DB7);
