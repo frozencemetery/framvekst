@@ -13,14 +13,21 @@
 /* Customize your wiring here if needed. */
 typedef enum {
     /* Pins 0 and 1 mirror serial with USB. */
-    SERIAL_0 = 0,
-    SERIAL_1 = 1,
+    SERIAL_TX = 0,
+    SERIAL_RX = 1,
 
-    ONEWIRE_PIN,
-    TEMP_RELAY,
-    HUMID_RELAY,
-    MODE_BUTTON,
+    ONEWIRE_PIN = 2,
+    TEMP_RELAY = 3,
+    HUMID_RELAY = 4,
+    MODE_BUTTON = 5,
+
+    /* LED_BUILTIN = 13, */
+
+    SDA_PIN = 18,
+    SCL_PIN = 19,
 } pin;
+
+#define COFF(a) (((float)(a) - 32) * 5) / 9
 
 /* Careful with these.  There needs to be defined band for the system to coast
  * between.  While this is all floating point, sensor precision is a concern:
@@ -37,13 +44,13 @@ struct {
         .debug = true,
     },
     { /* sourdough bread */
-        .low = 22.22, /* ~72°F */
-        .high = 23.89, /* ~75°F */
+        .low = COFF(72),
+        .high = COFF(75),
         .debug = false,
     },
     { /* vegan yogurt */
-        .low = 41.67, /* ~107°F */
-        .high = 43.33, /* ~110°F */
+        .low = COFF(107),
+        .high = COFF(110),
         .debug = false,
     },
 };
@@ -73,9 +80,12 @@ uint8_t ds18b20_addr[8];
 OneWire onewire(ONEWIRE_PIN);
 bool ds18b20_found = false;
 
-/* Sainsmart multi-channel relay board. */
-bool temp_relay_off = false;
-bool humid_relay_off = false;
+bool temp_relay_off = true;
+bool humid_relay_off = true;
+
+static inline float fofc(float celsius) {
+    return (9 * celsius) / 5 + 32;
+}
 
 /* Assumes temp sensor is already selected and ready.  I don't really see
  * much purpose in the checksuming, so I don't bother. */
@@ -105,31 +115,28 @@ static inline float ds18b20_get_temp() {
  * when the control pin is disconnected. */
 static inline void relay_off(pin pin, bool *relay_off) {
     if (!*relay_off) {
-        pinMode(pin, LOW);
+        digitalWrite(pin, LOW);
         *relay_off = true;
     }
 }
 
 static inline void relay_on(pin pin, bool *relay_off) {
     if (*relay_off) {
-        pinMode(pin, HIGH);
+        digitalWrite(pin, HIGH);
         *relay_off = false;
     }
 }
 
 void setup(void) {
-    /* Relays start in ~unknown state - turn them off. */
     pinMode(TEMP_RELAY, OUTPUT);
-    relay_off(TEMP_RELAY, &temp_relay_off);
     pinMode(HUMID_RELAY, OUTPUT);
-    relay_off(HUMID_RELAY, &humid_relay_off);
 
     pinMode(MODE_BUTTON, INPUT_PULLUP);
 
     pinMode(LED_BUILTIN, OUTPUT);
 
     Serial.begin(BAUD);
-    while (!Serial) { /* C++ is weeeeeeeird */
+    while (!Serial) {
         delay(100);
     }
 
@@ -204,10 +211,10 @@ static inline void log_readings(float t, float h, float t_probe) {
     }
 
     Serial.print("Read: ");
-    Serial.print(t);
-    Serial.print("°C (probe ");
-    Serial.print(t_probe);
-    Serial.print("°C), ");
+    Serial.print(fofc(t));
+    Serial.print("°F (probe ");
+    Serial.print(fofc(t_probe));
+    Serial.print("°F), ");
     Serial.print(h);
     Serial.println("%RH");
 }
