@@ -8,8 +8,8 @@
 /* Adapted from humid.ino to drive a heater instead of a humidifier. */
 
 /* Farenheit. */
-#define TEMP_MIN 33
-#define TEMP_MAX 37
+#define TEMP_MIN 35
+#define TEMP_MAX 39
 
 #define BAUD 9600
 #define BASE_DELAY 5
