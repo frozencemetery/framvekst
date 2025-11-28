@@ -6,6 +6,8 @@
 #include <LiquidCrystal.h>
 
 #define BAUD 9600
+#define HUMID_LOW 45
+#define HUMID_HIGH 50
 
 typedef enum {
     SERIAL_TX = 0,
@@ -94,12 +96,12 @@ void loop(void) {
     lcd.print(humidity);
     lcd.print("%RH ");
 
-    if (humidity < 40 && !relay_on) {
+    if (humidity < HUMID_LOW && !relay_on) {
         digitalWrite(RELAY, HIGH);
         relay_on = true;
         delay_secs += 300;
         lcd.print("*on*");
-    } else if (humidity > 45 && relay_on) {
+    } else if (humidity > HUMID_HIGH && relay_on) {
         digitalWrite(RELAY, LOW);
         relay_on = false;
         delay_secs += 300;
